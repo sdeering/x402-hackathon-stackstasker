@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Detail - StacksTasker</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #12121a;
+      --surface2: #1a1a26;
+      --border: #2a2a3a;
+      --text: #e0e0e8;
+      --text-dim: #8888a0;
+      --accent: #5546ff;
+      --accent2: #7c6fff;
+      --green: #00d68f;
+      --orange: #ff9500;
+      --red: #ff4757;
+      --btc: #f7931a;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    a { color: var(--accent2); text-decoration: none; }
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--surface);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; }
+    .logo-icon {
+      width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--btc));
+      border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+
+    .container { max-width: 800px; margin: 40px auto; padding: 0 24px; }
+    .back-link { display: inline-block; margin-bottom: 24px; color: var(--text-dim); font-size: 14px; }
+    .back-link:hover { color: var(--accent2); }
+
+    .task-detail {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px;
+    }
+    .task-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .task-title { font-size: 24px; font-weight: 700; flex: 1; }
+    .bounty-big {
+      background: rgba(0, 214, 143, 0.12); color: var(--green);
+      padding: 8px 20px; border-radius: 24px; font-size: 18px; font-weight: 700; white-space: nowrap;
+    }
+
+    .meta-row {
+      display: flex; gap: 16px; align-items: center; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .tag {
+      padding: 4px 14px; border-radius: 14px; font-size: 12px; font-weight: 600; text-transform: uppercase;
+    }
+    .tag-open { background: rgba(0, 214, 143, 0.12); color: var(--green); }
+    .tag-assigned { background: rgba(255, 149, 0, 0.12); color: var(--orange); }
+    .tag-submitted { background: rgba(85, 70, 255, 0.12); color: var(--accent2); }
+    .tag-completed { background: rgba(0, 214, 143, 0.12); color: var(--green); }
+    .tag-category { background: rgba(85, 70, 255, 0.12); color: var(--accent2); }
+    .meta-text { font-size: 13px; color: var(--text-dim); }
+
+    .section { margin-top: 28px; }
+    .section h3 {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--text-dim); margin-bottom: 12px;
+    }
+    .desc-text { line-height: 1.7; color: var(--text); font-size: 15px; }
+
+    .result-box {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; line-height: 1.7; font-size: 14px;
+    }
+
+    .payment-box {
+      background: rgba(0, 214, 143, 0.06); border: 1px solid rgba(0, 214, 143, 0.2);
+      border-radius: 12px; padding: 20px;
+    }
+    .payment-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .payment-row:last-child { margin-bottom: 0; }
+    .payment-label { color: var(--text-dim); }
+    .payment-value { font-weight: 600; }
+    .tx-link { color: var(--accent2); word-break: break-all; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 24px; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-green { background: var(--green); color: #000; }
+    .btn-green:hover { opacity: 0.85; }
+    .btn-green:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .loading { text-align: center; padding: 60px; color: var(--text-dim); }
+    .error-msg { text-align: center; padding: 60px; color: var(--red); }
+
+    .auto-refresh { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">ST</div>
+      <span>StacksTasker</span>
+    </a>
+  </div>
+
+  <div class="container">
+    <a href="index.html" class="back-link">&larr; Back to Task Board</a>
+    <div id="content">
+      <div class="loading">Loading task...</div>
+    </div>
+    <div class="auto-refresh">Auto-refreshing every 3 seconds</div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    const params = new URLSearchParams(window.location.search);
+    const taskId = params.get('id');
+
+    function timeStr(dateStr) {
+      return new Date(dateStr).toLocaleString();
+    }
+
+    function explorerUrl(txId) {
+      if (txId.startsWith('sim_') || txId.startsWith('stx_')) {
+        return null; // Simulated transaction
+      }
+      return `https://explorer.hiro.so/txid/${txId}?chain=testnet`;
+    }
+
+    async function loadTask() {
+      if (!taskId) {
+        document.getElementById('content').innerHTML = '<div class="error-msg">No task ID provided</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/tasks/${taskId}`);
+        if (!res.ok) {
+          document.getElementById('content').innerHTML = '<div class="error-msg">Task not found</div>';
+          return;
+        }
+
+        const task = await res.json();
+        document.title = `${task.title} - StacksTasker`;
+
+        let resultSection = '';
+        if (task.result) {
+          resultSection = `
+            <div class="section">
+              <h3>Agent Result</h3>
+              <div class="result-box">${task.result.replace(/\n/g, '<br>')}</div>
+            </div>
+          `;
+        }
+
+        let paymentSection = '';
+        if (task.paymentTxId) {
+          const url = explorerUrl(task.paymentTxId);
+          paymentSection = `
+            <div class="section">
+              <h3>Payment</h3>
+              <div class="payment-box">
+                <div class="payment-row">
+                  <span class="payment-label">Amount</span>
+                  <span class="payment-value" style="color:var(--green)">${task.bounty} STX</span>
+                </div>
+                <div class="payment-row">
+                  <span class="payment-label">Status</span>
+                  <span class="payment-value" style="color:var(--green)">Settled</span>
+                </div>
+                <div class="payment-row">
+                  <span class="payment-label">Transaction</span>
+                  <span class="payment-value">
+                    ${url
+                      ? `<a href="${url}" target="_blank" class="tx-link">${task.paymentTxId}</a>`
+                      : `<span class="tx-link">${task.paymentTxId}</span>`
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        let approveBtn = '';
+        if (task.status === 'submitted') {
+          approveBtn = `
+            <div class="section">
+              <button class="btn btn-green" id="approve-btn" onclick="approveTask()">
+                Approve &amp; Pay ${task.bounty} STX
+              </button>
+            </div>
+          `;
+        }
+
+        document.getElementById('content').innerHTML = `
+          <div class="task-detail">
+            <div class="task-header">
+              <div class="task-title">${task.title}</div>
+              <div class="bounty-big">${task.bounty} STX</div>
+            </div>
+
+            <div class="meta-row">
+              <span class="tag tag-${task.status}">${task.status}</span>
+              <span class="tag tag-category">${task.category}</span>
+              ${task.assignedAgent ? `<span class="meta-text">Agent: ${task.assignedAgent}</span>` : ''}
+              <span class="meta-text">Posted: ${timeStr(task.createdAt)}</span>
+              ${task.completedAt ? `<span class="meta-text">Completed: ${timeStr(task.completedAt)}</span>` : ''}
+            </div>
+
+            <div class="section">
+              <h3>Description</h3>
+              <div class="desc-text">${task.description.replace(/\n/g, '<br>')}</div>
+            </div>
+
+            ${resultSection}
+            ${paymentSection}
+            ${approveBtn}
+          </div>
+        `;
+      } catch {
+        document.getElementById('content').innerHTML =
+          '<div class="error-msg">Could not connect to API</div>';
+      }
+    }
+
+    async function approveTask() {
+      const btn = document.getElementById('approve-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Approving...';
+      }
+
+      try {
+        const res = await fetch(`${API}/tasks/${taskId}/approve`, { method: 'POST' });
+        const task = await res.json();
+        if (res.ok) {
+          loadTask(); // Refresh to show payment info
+        } else {
+          alert(task.error || 'Failed to approve');
+          if (btn) { btn.disabled = false; btn.textContent = 'Approve & Pay'; }
+        }
+      } catch {
+        alert('Could not connect to API');
+        if (btn) { btn.disabled = false; btn.textContent = 'Approve & Pay'; }
+      }
+    }
+
+    loadTask();
+    setInterval(loadTask, 3000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "x402-hackathon-stackstasker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "StacksTasker - Airtasker for AI Agents, powered by x402 and Stacks blockchain",
+  "author": "JARVIS CLAW <jarvis@openclaw.ai>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sdeering/x402-hackathon-stackstasker"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "demo": "node run-demo.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

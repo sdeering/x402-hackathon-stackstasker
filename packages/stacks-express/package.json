@@ -1,0 +1,34 @@
+{
+  "name": "@x402/stacks-express",
+  "version": "0.1.0",
+  "description": "Express middleware for x402 Stacks payments with facilitator delegation",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --test",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@x402/stacks": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.0",
+    "@types/express": "^4.17.21"
+  },
+  "peerDependencies": {
+    "express": "^4.18.0"
+  },
+  "keywords": ["x402", "stacks", "express", "middleware", "payments", "facilitator"],
+  "license": "Apache-2.0"
+}
